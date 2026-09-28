@@ -29,8 +29,39 @@ glow(px,493,80,'#63eeed17');ctx.save();ctx.translate(px,500);ctx.scale(1,.1);ctx
 let bossAlpha=state.phase==='won'?Math.max(.08,1-(visualTime-(window.winVisual||visualTime))*2):1;if(state.phase==='won'&&!window.winVisual)window.winVisual=visualTime;if(state.phase!=='won')window.winVisual=0;
 sprite(boss,bx,by,ready?280:310,bx<px,bossAlpha,state.b.hit>0?sin(state.b.hit*40)*.03:0);if(state.b.hit>0)glow(bx,360,100,'#feaa7044');sprite(doctor,px,py,ready?455:400,!face,state.p.inv>0&&Math.floor(visualTime*16)%2?.45:1,keys.size?(face?.025:-.025):0);
 const coreX=px+(face?27:-27),coreY=py-18;glow(coreX,coreY,24,'#70e6ff60');ctx.fillStyle='#d6fdff';ctx.beginPath();ctx.arc(coreX,coreY,3,0,Math.PI*2);ctx.fill();
-if(state.ult){const u=state.ult,t=u.time,alpha=Math.max(0,1-t/.72);ctx.save();ctx.globalAlpha=alpha;const endX=u.x+u.dir*RULES.range;ctx.shadowColor='#78f8ff';ctx.shadowBlur=22;for(const[w,c]of[[28,'#6ecbe622'],[10,'#72ddeb'],[3,'#edfffb']]){ctx.strokeStyle=c;ctx.lineWidth=w;ctx.beginPath();ctx.moveTo(u.x+u.dir*27,coreY);ctx.lineTo(Math.max(0,Math.min(1280,endX)),coreY);ctx.stroke();}glow(u.x+u.dir*27,coreY,75,'#a4f8ff70');if(u.melee){ctx.strokeStyle='#bcffff';ctx.lineWidth=8;ctx.beginPath();ctx.arc(u.x+u.dir*90,380,190,-1.2+t*2,1.1+t*2);ctx.stroke();ctx.lineWidth=2;ctx.beginPath();ctx.arc(u.x+u.dir*90,380,207,-1.2+t*2,1.1+t*2);ctx.stroke();}ctx.restore();}
+if(state.ult){const u=state.ult,t=u.time,alpha=Math.max(0,1-t/.72);ctx.save();ctx.globalAlpha=alpha;const endX=u.x+u.dir*RULES.range;ctx.shadowColor='#78f8ff';ctx.shadowBlur=22;for(const[w,c]of[[28,'#6ecbe622'],[10,'#72ddeb'],[3,'#edfffb']]){ctx.strokeStyle=c;ctx.lineWidth=w;ctx.beginPath();ctx.moveTo(u.x+u.dir*27,coreY);ctx.lineTo(Math.max(0,Math.min(1280,endX)),coreY);ctx.stroke();}glow(u.x+u.dir*27,coreY,75,'#a4f8ff70');ctx.restore();if(u.melee)drawSword(u,px,py);}
 for(const f of fx){ctx.globalAlpha=Math.max(0,1-f.t/f.life);ctx.fillStyle=f.color;if(f.kind==='particle'){ctx.fillRect(f.x,f.y,4,4);}else{ctx.font='800 34px sans-serif';ctx.textAlign='center';ctx.fillText(f.text,f.x,f.y-f.t*65);}}ctx.globalAlpha=1;ctx.restore();}
+// A mirrored arm-and-blade swing, anchored to the pilot's hand.
+function drawSword(u,x,y){
+ const t=u.time;if(t<.10)return;
+ const progress=Math.min(1,(t-.10)/.53),ease=1-Math.pow(1-progress,3);
+ const angle=reduced?.25:-1.65+ease*3.05;
+ const opacity=Math.min(1,(t-.10)*18)*Math.min(1,(.8-t)*9);
+ ctx.save();ctx.translate(x,y);ctx.scale(u.dir,1);ctx.globalAlpha=Math.max(0,opacity);
+ // The armored forearm follows the blade through the slash.
+ ctx.translate(57,8);ctx.rotate(angle);
+ ctx.lineCap='round';ctx.strokeStyle='#101b29';ctx.lineWidth=24;
+ ctx.beginPath();ctx.moveTo(-35,8);ctx.lineTo(15,0);ctx.stroke();
+ ctx.strokeStyle='#e5edf0';ctx.lineWidth=16;ctx.stroke();
+ ctx.fillStyle='#233f60';ctx.fillRect(2,-12,28,24);
+ ctx.shadowColor='#70faff';ctx.shadowBlur=25;
+ // Several trailing edges form a broad crescent rather than a single ring.
+ if(progress>.08){for(let i=0;i<9;i++){
+ ctx.strokeStyle=`rgba(92,238,255,${(1-i/9)*.24})`;ctx.lineWidth=19-i*1.7;
+ ctx.beginPath();ctx.arc(0,0,200-i*3,-Math.min(1.2,progress*2.1)-i*.018,0);ctx.stroke();
+ }}
+ for(const[w,c]of[[25,'#45d9ff33'],[12,'#63efff'],[4,'#f2ffff']]){
+ ctx.strokeStyle=c;ctx.lineWidth=w;ctx.beginPath();ctx.moveTo(36,0);ctx.lineTo(220,0);ctx.stroke();}
+ ctx.shadowBlur=0;ctx.fillStyle='#eacb80';ctx.fillRect(25,-20,9,40);
+ ctx.fillStyle='#182f46';ctx.fillRect(4,-6,22,12);
+ ctx.fillStyle='#f5e3ac';ctx.fillRect(1,-9,7,18);ctx.restore();
+ // Brief impact rays make contact readable even during the fast swing.
+ if(t>.22&&t<.52){const fade=1-(t-.22)/.3;ctx.save();ctx.globalAlpha=fade;
+ ctx.translate(state.b.x,365);ctx.strokeStyle='#e5ffff';ctx.shadowColor='#57eaff';ctx.shadowBlur=18;
+ for(let i=0;i<10;i++){const a=i*Math.PI/5+.2,r=35+(1-fade)*65;ctx.lineWidth=i%2?2:4;
+ ctx.beginPath();ctx.moveTo(Math.cos(a)*20,Math.sin(a)*20);ctx.lineTo(Math.cos(a)*r,Math.sin(a)*r);ctx.stroke();}
+ ctx.restore();}
+}
 function frame(now){const dt=Math.min(.04,(now-last)/1000||0);last=now;if(state.phase!=='paused'){visualTime+=dt;if(state.phase==='won'&&state.ult){state.ult.time+=dt;if(state.ult.time>.8)state.ult=null;}step(state,dt,(keys.has('ArrowRight')?1:0)-(keys.has('ArrowLeft')?1:0));consume();for(const f of fx){f.t+=dt;if(f.kind==='particle'){f.x+=f.vx*dt;f.y+=f.vy*dt;f.vy+=180*dt;}}fx=fx.filter(f=>f.t<f.life);shake=Math.max(0,shake-dt*30);captionTime-=dt;if(captionTime<=0)$('#caption').classList.remove('show');}sync();draw();requestAnimationFrame(frame);}requestAnimationFrame(frame);
 // Keep the complete battlefield visible at narrow widths.
 function resize(){const r=canvas.getBoundingClientRect(),d=Math.min(devicePixelRatio||1,2);canvas.width=Math.round(r.width*d);canvas.height=Math.round(r.height*d);}new ResizeObserver(resize).observe(canvas);
