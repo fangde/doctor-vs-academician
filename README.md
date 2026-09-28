@@ -1,5 +1,7 @@
 # 博士大战院士
 
+在线游玩：https://fangde.github.io/doctor-vs-academician/
+
 可直接部署的静态网页 2D 格斗游戏。角色由已提供的参考图与 Blender 场景导出，保留人脸、眼镜、机械翼和蟾蜍形象。
 
 操作：← / → 左右移动，空格释放大招；移动端使用对应的屏幕按钮。自动悬停，不区分空格单击与双击。
@@ -20,3 +22,7 @@
 - `check-game.mjs`：关键战斗逻辑检查，运行 `node check-game.mjs`
 
 这些数值是首个可玩版本的实现选择，后续可按需求调整。
+
+## GitHub Pages 发布
+
+页面从 `gh-pages` 分支根目录发布。更新 `dist` 后提交到 `main`，再运行 `git subtree split --prefix dist -b pages-update` 和 `git push origin pages-update:gh-pages` 发布。
